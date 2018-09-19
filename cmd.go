@@ -2,13 +2,17 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 )
 
 /*
 this function creates a temporary test file
 writes into it all the files the functions
 that need to be included and closes the file*/
+
+/* strings to echo into temp file*/
 func GetFunctionString(functions []string) string {
 	var functionString string
 	for _, val := range functions {
@@ -28,12 +32,14 @@ func ListFunctions() []strings {
 
 }
 
-// TODO: this is a list read from .testignore file which lists all the
-// functions which are to be ignored in the testing
+/*
+this function reads the file .testignore and reads
+the function which are to be ignored*/
 func ExcludeList() map[string]bool {
 	//read contents from file
-	// covnert to string
-	// functionString=string(flestring)
+	f := os.Open(".testignore", os.READ)
+	fileContent, err := ioutil.ReadAll(f)
+	functionString = string(fileContent)
 	exfunctions := strings.Split(functionString, "\n")
 	exmap = make(map[string]bool)
 	for key, val := range exfunctions {
@@ -42,14 +48,16 @@ func ExcludeList() map[string]bool {
 	return exmap
 }
 
-// TODO: writes contents to a file
 func WriteContent(cont []byte) error {
 	// open file
-	f := os.Open("ko_test.go", os.Create || os.RDWR || os.Write, 655)
+	f, err := os.Open("ko_test.go", os.Create || os.RDWR || os.Write, 655)
+	if err != nil {
+		return err
+	}
 	// defer file close
 	defer f.Close()
 	// write to file
-	err := f.Write(cont)
+	_, err = f.Write(cont)
 	if err != nil {
 		return err
 	}
@@ -57,13 +65,21 @@ func WriteContent(cont []byte) error {
 	return nil
 }
 
-// TODO: execute the go test command on the test file generated
 func CmdExecTest() error {
-
+	cmd := exec.Command("go", "test", "ko_test.go")
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
 }
 
 func RemoveFile() error {
 	// remove file
+	cmd := exec.Command("rm", "ko_test.go")
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
 }
 
 func main() {
