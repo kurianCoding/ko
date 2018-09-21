@@ -5,8 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
 	//"reflect"
+	"regexp"
+	"strings"
 )
 
 /*
@@ -31,10 +32,20 @@ func ImportString() string {
 
 //TODO: this function returns a list of all the functions that are called
 //while testing in the current directory
-func ListFunctions() []string {
+func ListFunctions(fileContents string) map[string]string {
+	//regex for functions
+	//func\sTest[A-z]*\(.*?\)\s\{[^*]+\}
+	//func\sTest[A-z]+\s\([A-z]\s\*testing.[A-z]\)\{\n[^\{]*\}
 
-	files := []string{"Test", "Test1", "Test2"}
-	return files
+	//func\s[A-z]* //split the file using this and write the values as key value pair
+	rgx := regexp.MustCompile(`func\s[A-z,0-9]*`)
+	array := rgx.Split(fileContents, -1)
+	functionNames := rgx.FindAllString(fileContents, -1)
+	functionMaps := make(map[string]string, 1)
+	for i := 1; i < len(functionNames); i++ {
+		functionMaps[functionNames[i]] = array[i+1]
+	}
+	return functionMaps
 
 }
 
@@ -63,7 +74,7 @@ func ExcludeList() (map[string]bool, error) {
 /* write content to temporary go file for ko testing*/
 func WriteContent(cont []byte) error {
 	// open file
-	f, err := os.OpenFile("ko_test.go", os.O_APPEND|os.O_RDWR|os.O_CREATE, 655)
+	f, err := os.OpenFile("ko_test.go", os.O_APPEND|os.O_RDWR|os.O_CREATE, 777)
 	if err != nil {
 		return err
 	}
@@ -102,15 +113,31 @@ func RemoveFile() error {
 	}
 	return nil
 }
+func readTestFile(filePath string) ([]byte, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	contents, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	return contents, nil
+}
 
 func main() {
-	functions := ListFunctions()
+	test, err := readTestFile(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+
+	funcMap := ListFunctions(string(test))
 	exfunctions, err := ExcludeList()
 	if err != nil {
 		panic(err)
 	}
 	var preparefunctions = make([]string, 1)
-	for _, val := range functions {
+	for _, val := range funcMap {
 		if !exfunctions[val] {
 			preparefunctions = append(preparefunctions, val)
 		}
@@ -121,11 +148,11 @@ func main() {
 		panic(err)
 	}
 
-	defer RemoveFile() // remove the file after checking if it exists
+	//defer RemoveFile() // remove the file after checking if it exists
 	err = CmdExecTest()
 
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 
 	return
