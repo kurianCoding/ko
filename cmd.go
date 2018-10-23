@@ -167,7 +167,7 @@ func main() {
 		panic(err)
 	}
 
-	//defer RemoveFile() // remove the file after checking if it exists
+	defer RemoveFile() // remove the file after checking if it exists
 	err = CmdExecTest()
 
 	if err != nil {
