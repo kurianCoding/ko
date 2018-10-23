@@ -19,7 +19,7 @@ that need to be included and closes the file*/
 func GetFunctionString(functions []string) string {
 	var functionString string
 	for _, val := range functions {
-		functionString = fmt.Sprintf("%s%s(t)\n", functionString, val)
+		functionString = fmt.Sprintf("%s%s\n", functionString, val)
 	}
 	return functionString
 }
@@ -66,7 +66,7 @@ func ExcludeList() (map[string]bool, error) {
 	exfunctions := strings.Split(functionString, "\n")
 	var exmap = make(map[string]bool)
 	for _, val := range exfunctions {
-		exmap[val] = true
+		exmap["func "+val] = true
 	}
 	return exmap, nil
 }
@@ -114,7 +114,9 @@ func RemoveFile() error {
 	return nil
 }
 func readTestFile(filePath string) ([]byte, error) {
-	f, err := os.Open(filePath)
+	//TODO: generic file name so that it takes all
+	// ko files in the directory
+	f, err := os.Open(filePath + "test.ko")
 	if err != nil {
 		return nil, err
 	}
@@ -137,11 +139,14 @@ func main() {
 		panic(err)
 	}
 	var preparefunctions = make([]string, 1)
-	for _, val := range funcMap {
-		if !exfunctions[val] {
-			preparefunctions = append(preparefunctions, val)
+	for key, val := range funcMap {
+		if exfunctions[key] == true {
+			continue
+		} else {
+			preparefunctions = append(preparefunctions, key+val)
 		}
 	}
+
 	fileContent := []byte(ImportString() + GetFunctionString(preparefunctions))
 	err = WriteContent(fileContent)
 	if err != nil {
@@ -152,7 +157,7 @@ func main() {
 	err = CmdExecTest()
 
 	if err != nil {
-		//panic(err)
+		panic(err)
 	}
 
 	return

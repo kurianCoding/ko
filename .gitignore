@@ -1,4 +1,5 @@
 cmd
+test.ko
 ko_test.go
 .testignore
 test.go
