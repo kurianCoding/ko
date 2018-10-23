@@ -26,11 +26,25 @@ func GetFunctionString(functions []string) string {
 
 //TODO: this function returns the header that is to be written
 // to the ko test
-func ImportString() string {
-	return `import "testing"`
+func ImportString(testFile []byte) string {
+	/*
+		get the package name
+	*/
+	packageName := strings.Split(string(testFile), "\n")[0]
+	/*
+	   get the import string
+	*/
+
+	/*
+		TODO
+			rgx := regexp.MustCompile(`import\(\n[A-z,0-9]*\)`)
+			imports := rgx.FindAllString(string(testfile), -1)
+	*/
+	importString := `import "testing"`
+	return fmt.Sprintf("%s\n%s", packageName, importString)
 }
 
-//TODO: this function returns a list of all the functions that are called
+//his function returns a list of all the functions that are called
 //while testing in the current directory
 func ListFunctions(fileContents string) map[string]string {
 	//regex for functions
@@ -147,7 +161,7 @@ func main() {
 		}
 	}
 
-	fileContent := []byte(ImportString() + GetFunctionString(preparefunctions))
+	fileContent := []byte(ImportString(test) + GetFunctionString(preparefunctions))
 	err = WriteContent(fileContent)
 	if err != nil {
 		panic(err)
